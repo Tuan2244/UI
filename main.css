@@ -92,6 +92,12 @@
     padding-left: 170px;
     font-size: 25px;
 }
+#toggleButton4,
+#toggleButton5 {
+    position: absolute;
+    bottom: 40px;
+    right: 40px;
+}
 /*.fa-fan {
     transform-origin: center center; 
     animation: spin 1s linear infinite;

@@ -1,3 +1,17 @@
+function switchView(viewId) {
+    // Ẩn tất cả các giao diện
+    const views = document.querySelectorAll('.view');
+    views.forEach(view => view.style.display = 'none');
+    // Hiển thị giao diện được chọn
+    document.getElementById(viewId).style.display = 'block';
+
+    // Cập nhật lại dữ liệu sau khi thay đổi giao diện
+    if (viewId === 'view2') {
+        // Đảm bảo bảng thiết bị luôn được cập nhật
+        fetchDeviceData();
+        setInterval(fetchDeviceData, 10000);
+    }
+}
 let storedData = [];
 // Hàm để lấy dữ liệu từ API và cập nhật giao diện
 async function fetchData() {
@@ -41,8 +55,8 @@ function updateTable(data) {
 
 // Hàm tìm kiếm dữ liệu trong bảng
 function searchTable() {
-    const selectValue = document.querySelector('.form-select').value.toLowerCase();
-    const searchInput = document.querySelector('.form-control').value.toLowerCase();
+    const selectValue = document.getElementById('search2-category').value.toLowerCase();
+    const searchInput = document.getElementById('search2-input').value.toLowerCase();
     const tableBody = document.getElementById('data-table-body');
     tableBody.innerHTML = '';
 
@@ -78,10 +92,32 @@ function searchTable() {
     }
 }
 
-// Đăng ký sự kiện cho nút tìm kiếm
-document.querySelector('.btn-primary').addEventListener('click', searchTable);
+// Gắn sự kiện click cho nút "Search"
+document.getElementById('search2-button').addEventListener('click', searchTable);
+
 
 let storedDevices = [];
+let led4OnCount = 0;
+let led5OnCount = 0;
+
+function updateLedCounts(devices) {
+    // Reset counts
+    led4OnCount = 0;
+    led5OnCount = 0;
+
+    // Tăng số lần bật nếu `action` là "on"
+    devices.forEach(item => {
+        if (item.device.toLowerCase() === 'led4' && item.action.toLowerCase() === 'on') {
+            led4OnCount++;
+        } else if (item.device.toLowerCase() === 'led5' && item.action.toLowerCase() === 'on') {
+            led5OnCount++;
+        }
+    });
+
+    // Cập nhật số lần bật cho LED4 và LED5
+    document.getElementById('led4-count').textContent = `Số lần bật: ${led4OnCount/2}`;
+    document.getElementById('led5-count').textContent = `Số lần bật: ${led5OnCount/2}`;
+}
 
 // Hàm để lấy dữ liệu thiết bị từ API và cập nhật bảng
 async function fetchDeviceData() {
@@ -100,6 +136,7 @@ async function fetchDeviceData() {
         console.log(storedDevices);  
         // Cập nhật bảng với dữ liệu thiết bị
         updateDeviceTable(devices);
+        updateLedCounts(devices);
     } catch (error) {
         console.error('Error fetching device data:', error);
     }
@@ -107,8 +144,13 @@ async function fetchDeviceData() {
 
 // Hàm cập nhật bảng thiết bị
 function updateDeviceTable(devices) {
-    const tableBody = document.getElementById('device-table-body');
-    tableBody.innerHTML = ''; // Xóa nội dung bảng trước khi thêm mới
+    // Lấy body của hai bảng
+    const tableBody1 = document.getElementById('device-table-body');  // Bảng cho LED1, LED2, LED3
+    const tableBody2 = document.getElementById('device1-table-body'); // Bảng cho LED4, LED5
+
+    // Xóa nội dung cũ của hai bảng
+    tableBody1.innerHTML = '';
+    tableBody2.innerHTML = '';
 
     devices.forEach(item => {
         const row = document.createElement('tr');
@@ -118,9 +160,17 @@ function updateDeviceTable(devices) {
             <td>${item.action}</td>
             <td>${item.time}</td>
         `;
-        tableBody.appendChild(row);
+        const group1Devices = ['led1', 'led2', 'led3'];
+        const group2Devices = ['led4', 'led5'];
+        if (group1Devices.includes(item.device.toLowerCase())) {
+            tableBody1.appendChild(row);
+        } else if (group2Devices.includes(item.device.toLowerCase())) {
+            tableBody2.appendChild(row);
+        }
+
     });
 }
+
 
 function searchDeviceTable() {
     const searchInput = document.getElementById('search-input').value.toLowerCase(); // Lấy giá trị từ ô tìm kiếm
@@ -147,14 +197,38 @@ function searchDeviceTable() {
     });
 }
 
-// Gắn sự kiện click vào nút Search
 document.getElementById('search-button').addEventListener('click', searchDeviceTable);
 
-// Gắn sự kiện tìm kiếm ngay khi người dùng nhập
-document.getElementById('search-input').addEventListener('input', searchDeviceTable);
+
+function searchDevice1Table() {
+    const searchInput = document.getElementById('search1-input').value.toLowerCase(); // Lấy giá trị từ ô tìm kiếm
+    const searchCategory = document.getElementById('search1-category').value.toLowerCase(); // Lấy giá trị từ select
+    const tableRows = document.querySelectorAll('#device1-table-body tr'); // Lấy tất cả các hàng trong bảng
+
+    tableRows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        let isMatch = false;
+
+        // Kiểm tra từng hàng dựa trên cột được chọn
+        if (searchCategory === 'device' && cells[1]) {
+            isMatch = cells[1].textContent.toLowerCase().includes(searchInput);
+        } else if (searchCategory === 'action' && cells[2]) {
+            isMatch = cells[2].textContent.toLowerCase().includes(searchInput);
+        } else if (searchCategory === 'time' && cells[3]) {
+            isMatch = cells[3].textContent.toLowerCase().includes(searchInput);
+        } else if (searchCategory === 'id' && cells[0]) {
+            isMatch = cells[0].textContent.toLowerCase().includes(searchInput);
+        }
+
+        // Hiển thị hoặc ẩn hàng dựa trên kết quả tìm kiếm
+        row.style.display = isMatch ? '' : 'none';
+    });
+}
+
+// Gắn sự kiện click vào nút Search
+document.getElementById('search1-button').addEventListener('click', searchDevice1Table);
 
 
-// Khai báo các biến toàn cục cho các biểu đồ và mảng dữ liệu
 // Khai báo các biến toàn cục cho các biểu đồ và mảng dữ liệu
 let tempChart, humidityChart, lightChart;
 let tempData = {
@@ -224,7 +298,7 @@ function updateCharts(data) {
 
     // Giới hạn số lượng điểm hiển thị (nếu cần)
     const maxDataPoints = 20;
-    if (tempData.labels.length > maxDataPoints) {
+    if (tempData.labels.length > maxDataPoints) { 
         tempData.labels.shift();
         tempData.datasets[0].data.shift();
     }
@@ -282,6 +356,16 @@ document.getElementById('toggleButton3').addEventListener('click', function () {
     controlLED(3, action);
 });
 
+document.getElementById('toggleButton4').addEventListener('click', function () {
+    const action = this.classList.toggle('active') ? 'on' : 'off';
+    controlLED(4, action); // Điều khiển LED4
+});
+
+// Đăng ký sự kiện cho nút bật/tắt LED5
+document.getElementById('toggleButton5').addEventListener('click', function () {
+    const action = this.classList.toggle('active') ? 'on' : 'off';
+    controlLED(5, action); // Điều khiển LED5
+});
 
 
 // Gọi hàm fetchData để lấy dữ liệu khi tải trang
@@ -289,7 +373,7 @@ window.onload = function() {
     initCharts();
     fetchData();
     fetchDeviceData();
-    setInterval(fetchData, 2000);  // Cập nhật dữ liệu mỗi 2 giây
+    setInterval(fetchData, 3000); // Cập nhật dữ liệu mỗi 3 giây
 };
 // Gọi hàm để cập nhật bảng cảm biến khi mở offcanvas
 document.getElementById('demoDATA').addEventListener('show.bs.offcanvas', fetchData);
